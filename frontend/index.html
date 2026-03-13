@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Obsidian AI — Personal Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --panel: #12121a;
+  --border: #1e1e2e;
+  --accent: #7c3aed;
+  --accent2: #06b6d4;
+  --accent3: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-heading: 'Orbitron', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 72px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  gap: 8px;
+  position: relative;
+  z-index: 10;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+#sidebar:hover { width: 180px; }
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0 18px;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  overflow: hidden;
+  gap: 6px;
+}
+.logo img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(124,58,237,0.6));
+  transition: width 0.3s, height 0.3s;
+}
+.logo-text {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 9px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  white-space: nowrap;
+  display: none;
+  text-transform: uppercase;
+}
+#sidebar:hover .logo-text { display: block; }
+#sidebar:hover .logo img { width: 48px; height: 48px; }
+
+.nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+#sidebar:hover .nav-btn { width: calc(100% - 24px); justify-content: flex-start; padding: 0 14px; gap: 12px; }
+.nav-btn span.label { display: none; font-size: 13px; font-weight: 600; }
+#sidebar:hover .nav-btn span.label { display: block; }
+.nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.nav-btn.active { box-shadow: 0 0 20px rgba(124,58,237,0.4); }
+
+/* ── Main ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+#header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#page-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+#page-title span { color: var(--accent); }
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+#api-key-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  width: 240px;
+  outline: none;
+}
+#api-key-input:focus { border-color: var(--accent); }
+
+#voice-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+#voice-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+#voice-btn.listening { background: var(--danger); border-color: var(--danger); color: white; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+/* ── Content area ── */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── Pages ── */
+.page { display: none; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ── Chat ── */
+#chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 130px); }
+#chat-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.msg { display: flex; gap: 12px; max-width: 80%; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-bubble {
+  padding: 12px 16px; border-radius: 16px;
+  font-size: 14px; line-height: 1.6;
+  font-family: var(--font-display);
+}
+.msg.ai .msg-bubble {
+  background: var(--panel); border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.msg.user .msg-bubble {
+  background: var(--accent); color: white;
+  border-bottom-right-radius: 4px;
+}
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0; margin-top: 4px;
+}
+.msg.ai .msg-avatar { background: var(--accent); }
+.msg.user .msg-avatar { background: var(--accent2); }
+
+#chat-input-area {
+  border-top: 1px solid var(--border); padding: 16px;
+  display: flex; gap: 10px; align-items: flex-end;
+}
+#chat-input {
+  flex: 1; background: var(--panel); border: 1px solid var(--border);
+  color: var(--text); padding: 12px 16px; border-radius: 12px;
+  font-family: var(--font-display); font-size: 14px;
+  resize: none; outline: none; min-height: 48px; max-height: 120px;
+}
+#chat-input:focus { border-color: var(--accent); }
+
+.send-btn {
+  width: 48px; height: 48px; background: var(--accent);
+  border: none; border-radius: 12px; color: white;
+  cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.send-btn:hover { background: #6d28d9; transform: scale(1.05); }
+
+/* ── Tasks ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-title { font-size: 16px; font-weight: 700; font-family: var(--font-heading); letter-spacing: 1px; text-transform: uppercase; }
+
+.add-btn {
+  background: var(--accent); color: white; border: none;
+  padding: 10px 20px; border-radius: 10px; cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 13px;
+  transition: all 0.2s;
+}
+.add-btn:hover { background: #6d28d9; }
+
+.task-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 20px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+  transition: all 0.2s;
+}
+.task-card:hover { border-color: var(--accent); }
+.task-card.done { opacity: 0.5; }
+
+.task-check {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 2px solid var(--border); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s; font-size: 13px;
+}
+.task-check.checked { background: var(--success); border-color: var(--success); color: white; }
+
+.task-info { flex: 1; }
+.task-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.task-card.done .task-title { text-decoration: line-through; }
+.task-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+.priority-badge {
+  padding: 3px 10px; border-radius: 20px; font-size: 10px;
+  font-weight: 700; font-family: var(--font-mono); letter-spacing: 1px;
+}
+.priority-high { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+.priority-medium { background: rgba(245,158,11,0.15); color: var(--accent3); border: 1px solid rgba(245,158,11,0.3); }
+.priority-low { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+
+.icon-btn {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 16px; padding: 4px;
+  transition: color 0.2s;
+}
+.icon-btn:hover { color: var(--danger); }
+
+/* ── Search ── */
+.search-bar-wrap { position: relative; margin-bottom: 24px; }
+#search-input {
+  width: 100%; background: var(--panel); border: 2px solid var(--border);
+  color: var(--text); padding: 16px 56px 16px 20px;
+  border-radius: 14px; font-size: 16px; font-family: var(--font-display);
+  outline: none; transition: border-color 0.2s;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-go {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: var(--accent); border: none; border-radius: 10px;
+  width: 36px; height: 36px; color: white; cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+
+.search-summary {
+  background: var(--panel); border: 1px solid var(--accent);
+  border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
+  font-size: 14px; line-height: 1.7;
+  border-left: 4px solid var(--accent);
+}
+
+.search-result {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.search-result:hover { border-color: var(--accent2); }
+.search-result-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: var(--accent2); }
+.search-result-snippet { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.search-result-url { font-size: 11px; color: var(--accent); font-family: var(--font-mono); margin-top: 6px; }
+
+/* ── Calendar ── */
+.calendar-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 24px;
+}
+.cal-header-cell {
+  text-align: center; font-size: 11px; font-weight: 700;
+  color: var(--muted); font-family: var(--font-mono);
+  padding: 8px 0; letter-spacing: 1px;
+}
+.cal-cell {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px; min-height: 64px;
+  cursor: pointer; transition: all 0.2s; position: relative;
+}
+.cal-cell:hover { border-color: var(--accent); }
+.cal-cell.today { border-color: var(--accent); background: rgba(124,58,237,0.1); }
+.cal-cell.other-month { opacity: 0.3; }
+.cal-date { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.cal-cell.today .cal-date { color: var(--accent); }
+.cal-dot { width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; }
+
+.events-list { margin-top: 8px; }
+.event-item {
+  background: var(--panel); border: 1px solid var(--border);
+  border-left: 4px solid var(--accent2); border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.event-title { font-weight: 600; font-size: 14px; }
+.event-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 3px; }
+
+/* ── Report ── */
+.report-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px; text-align: center;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--accent); }
+.stat-number { font-size: 36px; font-weight: 800; color: var(--accent); font-family: var(--font-mono); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+.report-content {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px;
+  font-size: 14px; line-height: 1.8; white-space: pre-wrap;
+}
+
+/* ── Modal ── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); z-index: 100;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px; width: 480px; max-width: 95vw;
+}
+.modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+.form-field { margin-bottom: 14px; }
+.form-field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+.form-field input, .form-field select, .form-field textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 14px; border-radius: 10px;
+  font-family: var(--font-display); font-size: 14px; outline: none;
+}
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  padding: 10px 20px; border-radius: 10px; cursor: pointer; font-family: var(--font-display);
+}
+.btn-save { background: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-family: var(--font-display); font-weight: 600; }
+
+/* ── Loading ── */
+.loading { display: flex; gap: 4px; align-items: center; padding: 8px 0; }
+.loading span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); animation: bounce 0.8s infinite;
+}
+.loading span:nth-child(2) { animation-delay: 0.1s; }
+.loading span:nth-child(3) { animation-delay: 0.2s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="logo">
+    <img src="logo.png" alt="Obsidian AI"/>
+    <span class="logo-text">Obsidian AI</span>
+  </div>
+  <button class="nav-btn active" data-page="chat" title="Chat">💬<span class="label">Chat</span></button>
+  <button class="nav-btn" data-page="tasks" title="Tasks">✅<span class="label">Tasks</span></button>
+  <button class="nav-btn" data-page="search" title="Search">🔍<span class="label">Search</span></button>
+  <button class="nav-btn" data-page="calendar" title="Calendar">📅<span class="label">Calendar</span></button>
+  <button class="nav-btn" data-page="report" title="Report">📊<span class="label">Report</span></button>
+</nav>
+
+<!-- Main -->
+<div id="main">
+  <header id="header">
+    <div id="page-title"><span>OBSIDIAN</span> AI — Chat</div>
+    <div class="header-right">
+      <div id="ollama-status" onclick="checkOllama()" title="Click to check Ollama status" style="cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted)"><span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span><span id="status-text">Checking Ollama...</span></div>
+      <button id="notif-btn" title="Click to enable notifications" onclick="requestNotifPermission()" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🔔</button>
+      <button id="voice-btn" title="Voice input" onclick="toggleVoice()">🎙️</button>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- CHAT PAGE -->
+    <div class="page active" id="page-chat">
+      <div id="chat-wrap">
+        <div id="chat-messages">
+          <div class="msg ai">
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-bubble">Hey! I'm <strong>Obsidian AI</strong>, your personal AI agent. I can help you manage tasks, search the web, plan your schedule, and more. What do you need today?</div>
+          </div>
+        </div>
+        <div id="chat-input-area">
+          <textarea id="chat-input" placeholder="Ask me anything…" rows="1" onkeydown="chatKeydown(event)"></textarea>
+          <button class="send-btn" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS PAGE -->
+    <div class="page" id="page-tasks">
+      <div class="section-header">
+        <div class="section-title">My Tasks</div>
+        <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
+      </div>
+      <div id="tasks-list"></div>
+    </div>
+
+    <!-- SEARCH PAGE -->
+    <div class="page" id="page-search">
+      <div class="search-bar-wrap">
+        <input id="search-input" type="text" placeholder="Search anything…" onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button id="search-go" onclick="doSearch()">→</button>
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <!-- CALENDAR PAGE -->
+    <div class="page" id="page-calendar">
+      <div class="section-header">
+        <div class="section-title" id="cal-month-label"></div>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="background:var(--bg);border:1px solid var(--border);color:var(--text)" onclick="changeMonth(-1)">←</button>
+          <button class="add-btn" onclick="openEventModal()">+ Add Event</button>
+          <button class="add-btn" style="background:var(--bg);border:1px solid var(--border);color:var(--text)" onclick="changeMonth(1)">→</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="cal-grid"></div>
+      <div class="section-header" style="margin-top:24px">
+        <div class="section-title" style="font-size:14px;color:var(--muted)">All Events</div>
+      </div>
+      <div id="events-list"></div>
+    </div>
+
+    <!-- REPORT PAGE -->
+    <div class="page" id="page-report">
+      <div class="section-header">
+        <div class="section-title">Weekly Report</div>
+        <button class="add-btn" onclick="loadReport()">↻ Generate</button>
+      </div>
+      <div class="report-stats" id="report-stats">
+        <div class="stat-card"><div class="stat-number" id="stat-completed">—</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-pending">—</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Total Tasks</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-events">—</div><div class="stat-label">Events This Week</div></div>
+      </div>
+      <div class="report-content" id="report-content">Click "Generate" to create your weekly report.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-bg" id="task-modal">
+  <div class="modal">
+    <h3>Add Task</h3>
+    <div class="form-field"><label>TITLE</label><input id="t-title" placeholder="Task title…"/></div>
+    <div class="form-field"><label>DESCRIPTION</label><textarea id="t-desc" rows="2" placeholder="Optional details…"></textarea></div>
+    <div class="form-field"><label>DUE DATE</label><input id="t-date" type="date"/></div>
+    <div class="form-field"><label>PRIORITY</label>
+      <select id="t-priority">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+      <button class="btn-save" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event Modal -->
+<div class="modal-bg" id="event-modal">
+  <div class="modal">
+    <h3>Add Event</h3>
+    <div class="form-field"><label>TITLE</label><input id="e-title" placeholder="Event name…"/></div>
+    <div class="form-field"><label>DATE</label><input id="e-date" type="date"/></div>
+    <div class="form-field"><label>TIME</label><input id="e-time" type="time"/></div>
+    <div class="form-field"><label>DESCRIPTION</label><textarea id="e-desc" rows="2" placeholder="Optional notes…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+      <button class="btn-save" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let chatHistory = [];
+let tasks = [];
+let events = [];
+let calDate = new Date();
+let recognition = null;
+
+// ── Ollama status ───────────────────────────────
+async function checkOllama() {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  txt.textContent = 'Checking...';
+  try {
+    const r = await fetch(`${API}/health`);
+    const d = await r.json();
+    if (d.ollama === 'online') {
+      dot.style.background = '#10b981';
+      txt.textContent = `● ${d.active_model} ready`;
+      txt.style.color = '#10b981';
+    } else {
+      dot.style.background = '#ef4444';
+      txt.textContent = '● Ollama offline — run: ollama serve';
+      txt.style.color = '#ef4444';
+    }
+  } catch {
+    dot.style.background = '#ef4444';
+    txt.textContent = '● Backend offline';
+    txt.style.color = '#ef4444';
+  }
+}
+
+window.addEventListener('load', () => {
+  navigateTo('chat');
+  loadTasks();
+  loadEvents();
+  checkOllama();
+  setInterval(checkOllama, 15000);
+  updateNotifBtn();
+  setInterval(checkReminders, 60000);
+  notifyOnLoad();
+});
+
+// ── Nav ────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => navigateTo(btn.dataset.page));
+});
+
+function navigateTo(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const titles = { chat:'Chat', tasks:'Tasks', search:'Search', calendar:'Calendar', report:'Report' };
+  document.getElementById('page-title').innerHTML = `<span>OBSIDIAN</span> AI — ${titles[page]}`;
+  if (page === 'tasks') loadTasksUI();
+  if (page === 'calendar') renderCalendar();
+  if (page === 'report') loadReport();
+}
+
+// ── Chat ───────────────────────────────────────
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  appendMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+
+  const loadEl = appendLoading();
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: chatHistory })
+    });
+    const data = await res.json();
+    loadEl.remove();
+    appendMsg('ai', data.reply);
+    chatHistory.push({ role: 'assistant', content: data.reply });
+  } catch {
+    loadEl.remove();
+    appendMsg('ai', '⚠️ Could not reach backend. Make sure the server is running on port 8000.');
+  }
+}
+
+function appendMsg(role, text) {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+function appendLoading() {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-avatar">🤖</div><div class="loading"><span></span><span></span><span></span></div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+// ── Voice ──────────────────────────────────────
+function toggleVoice() {
+  const btn = document.getElementById('voice-btn');
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Voice not supported in this browser. Use Chrome.'); return;
+  }
+  if (recognition) { recognition.stop(); recognition = null; btn.classList.remove('listening'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US'; recognition.continuous = false; recognition.interimResults = false;
+  recognition.onresult = e => {
+    const txt = e.results[0][0].transcript;
+    document.getElementById('chat-input').value = txt;
+    navigateTo('chat');
+    sendChat();
+  };
+  recognition.onend = () => { recognition = null; btn.classList.remove('listening'); };
+  recognition.start();
+  btn.classList.add('listening');
+}
+
+// ── Tasks ──────────────────────────────────────
+async function loadTasks() {
+  try {
+    const r = await fetch(`${API}/tasks`);
+    tasks = await r.json();
+    loadTasksUI();
+  } catch { tasks = []; }
+}
+
+function loadTasksUI() {
+  const list = document.getElementById('tasks-list');
+  if (!tasks.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No tasks yet. Add one to get started!</p></div>';
+    return;
+  }
+  list.innerHTML = tasks.map(t => `
+    <div class="task-card ${t.completed ? 'done' : ''}">
+      <div class="task-check ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}', ${!t.completed})">${t.completed ? '✓' : ''}</div>
+      <div class="task-info">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">${t.due_date ? '📅 ' + t.due_date : ''} ${t.description ? '· ' + t.description.substring(0,60) : ''}</div>
+      </div>
+      <span class="priority-badge priority-${t.priority}">${t.priority?.toUpperCase()}</span>
+      <button class="icon-btn" onclick="deleteTask('${t.id}')">🗑</button>
+    </div>`).join('');
+}
+
+function openTaskModal() {
+  document.getElementById('task-modal').classList.add('open');
+}
+
+async function saveTask() {
+  const title = document.getElementById('t-title').value.trim();
+  if (!title) return;
+  const task = {
+    title,
+    description: document.getElementById('t-desc').value,
+    due_date: document.getElementById('t-date').value,
+    priority: document.getElementById('t-priority').value,
+    completed: false
+  };
+  await fetch(`${API}/tasks`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(task) });
+  closeModals();
+  showNotif('✅ Task Added', document.getElementById('t-title').value || 'New task created');
+  document.getElementById('t-title').value = '';
+  document.getElementById('t-desc').value = '';
+  await loadTasks();
+}
+
+async function toggleTask(id, completed) {
+  await fetch(`${API}/tasks/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title:'', completed }) });
+  await loadTasks();
+}
+
+async function deleteTask(id) {
+  await fetch(`${API}/tasks/${id}`, { method:'DELETE' });
+  await loadTasks();
+}
+
+// ── Search ─────────────────────────────────────
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const box = document.getElementById('search-results');
+  box.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+  try {
+    const r = await fetch(`${API}/search`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ query: q }) });
+    const data = await r.json();
+    let html = '';
+    if (data.summary) html += `<div class="search-summary">🤖 <strong>AI Summary:</strong><br>${data.summary}</div>`;
+    if (data.results?.length) {
+      html += data.results.map(r => `
+        <div class="search-result">
+          <div class="search-result-title">${r.title}</div>
+          <div class="search-result-snippet">${r.snippet}</div>
+          ${r.url ? `<div class="search-result-url"><a href="${r.url}" target="_blank" style="color:var(--accent)">${r.url}</a></div>` : ''}
+        </div>`).join('');
+    } else {
+      html += '<div class="empty-state"><div class="icon">🔍</div><p>No results found.</p></div>';
+    }
+    box.innerHTML = html;
+  } catch {
+    box.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Search failed. Is the backend running?</p></div>';
+  }
+}
+
+// ── Calendar ───────────────────────────────────
+async function loadEvents() {
+  try {
+    const r = await fetch(`${API}/calendar`);
+    events = await r.json();
+  } catch { events = []; }
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
+  
+  const grid = document.getElementById('cal-grid');
+  const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  let html = days.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
+  
+  const firstDay = new Date(calDate.getFullYear(), calDate.getMonth(), 1);
+  const lastDay = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 0);
+  const today = new Date().toISOString().split('T')[0];
+  
+  let startDow = (firstDay.getDay() + 6) % 7;
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(firstDay); d.setDate(d.getDate() - (startDow - i));
+    html += `<div class="cal-cell other-month"><div class="cal-date">${d.getDate()}</div></div>`;
+  }
+  
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEvent = events.some(e => e.date === dateStr);
+    const isToday = dateStr === today;
+    html += `<div class="cal-cell ${isToday?'today':''}" onclick="openEventModal('${dateStr}')">
+      <div class="cal-date">${d}</div>
+      ${hasEvent ? '<div class="cal-dot"></div>' : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+  
+  const evList = document.getElementById('events-list');
+  if (!events.length) {
+    evList.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No events yet.</p></div>';
+  } else {
+    evList.innerHTML = events.sort((a,b) => a.date > b.date ? 1 : -1).map(e => `
+      <div class="event-item">
+        <div>
+          <div class="event-title">${e.title}</div>
+          <div class="event-meta">${e.date}${e.time ? ' at ' + e.time : ''} ${e.description ? '· ' + e.description : ''}</div>
+        </div>
+        <button class="icon-btn" onclick="deleteEvent('${e.id}')">🗑</button>
+      </div>`).join('');
+  }
+}
+
+function changeMonth(dir) {
+  calDate.setMonth(calDate.getMonth() + dir);
+  renderCalendar();
+}
+
+function openEventModal(date) {
+  document.getElementById('event-modal').classList.add('open');
+  if (date) document.getElementById('e-date').value = date;
+}
+
+async function saveEvent() {
+  const title = document.getElementById('e-title').value.trim();
+  if (!title) return;
+  const ev = {
+    title,
+    date: document.getElementById('e-date').value,
+    time: document.getElementById('e-time').value,
+    description: document.getElementById('e-desc').value
+  };
+  await fetch(`${API}/calendar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ev) });
+  closeModals();
+  showNotif('📅 Event Added', document.getElementById('e-title').value || 'New event created');
+  document.getElementById('e-title').value = '';
+  document.getElementById('e-time').value = '';
+  document.getElementById('e-desc').value = '';
+  await loadEvents();
+  renderCalendar();
+}
+
+async function deleteEvent(id) {
+  await fetch(`${API}/calendar/${id}`, { method:'DELETE' });
+  await loadEvents();
+  renderCalendar();
+}
+
+// ── Report ─────────────────────────────────────
+async function loadReport() {
+  document.getElementById('report-content').textContent = 'Generating your report…';
+  try {
+    const r = await fetch(`${API}/report`);
+    const data = await r.json();
+    document.getElementById('stat-completed').textContent = data.stats.completed;
+    document.getElementById('stat-pending').textContent = data.stats.pending;
+    document.getElementById('stat-total').textContent = data.stats.total_tasks;
+    document.getElementById('stat-events').textContent = data.stats.events_this_week;
+    document.getElementById('report-content').textContent = data.report;
+    showNotif('📊 Weekly Report Ready', `Completed: ${data.stats.completed} | Pending: ${data.stats.pending} tasks`);
+  } catch {
+    document.getElementById('report-content').textContent = '⚠️ Could not generate report. Is the backend running?';
+  }
+}
+
+
+// ── Notifications ───────────────────────────────────────────
+let notifPermission = false;
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    alert('Notifications not supported in this browser. Use Chrome.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  notifPermission = perm === 'granted';
+  updateNotifBtn();
+  if (notifPermission) {
+    showNotif('Obsidian AI', 'Notifications enabled! You will be reminded of tasks and events.', '🔔');
+  }
+}
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (Notification.permission === 'granted') {
+    btn.style.borderColor = '#10b981';
+    btn.style.color = '#10b981';
+    btn.title = 'Notifications ON';
+    notifPermission = true;
+  } else {
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--muted)';
+    btn.title = 'Click to enable notifications';
+  }
+}
+
+function showNotif(title, body, icon = '💎') {
+  if (Notification.permission !== 'granted') return;
+  const n = new Notification(title, {
+    body: body,
+    icon: 'logo.png',
+    badge: 'logo.png',
+    tag: title,
+    requireInteraction: false
+  });
+  n.onclick = () => { window.focus(); n.close(); };
+  setTimeout(() => n.close(), 8000);
+}
+
+// Check tasks & events every minute for reminders
+function checkReminders() {
+  if (Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+
+  // Task due today reminder (fires at 9:00 AM)
+  if (currentHour === 9 && currentMin === 0) {
+    const dueTodayTasks = tasks.filter(t => !t.completed && t.due_date === todayStr);
+    if (dueTodayTasks.length > 0) {
+      showNotif(
+        '📋 Tasks Due Today',
+        dueTodayTasks.map(t => '• ' + t.title).join('\n'),
+        '📋'
+      );
+    }
+  }
+
+  // Overdue tasks reminder (fires at 10:00 AM)
+  if (currentHour === 10 && currentMin === 0) {
+    const overdue = tasks.filter(t => !t.completed && t.due_date && t.due_date < todayStr);
+    if (overdue.length > 0) {
+      showNotif(
+        '⚠️ Overdue Tasks',
+        `You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}!`,
+        '⚠️'
+      );
+    }
+  }
+
+  // Event reminders — notify 30 mins before
+  events.forEach(ev => {
+    if (ev.date === todayStr && ev.time) {
+      const [evHour, evMin] = ev.time.split(':').map(Number);
+      const evTotalMins = evHour * 60 + evMin;
+      const nowTotalMins = currentHour * 60 + currentMin;
+      if (evTotalMins - nowTotalMins === 30) {
+        showNotif(
+          '📅 Event in 30 minutes',
+          ev.title + (ev.description ? '\n' + ev.description : ''),
+          '📅'
+        );
+      }
+      // Also notify at exact time
+      if (evTotalMins === nowTotalMins) {
+        showNotif(
+          '📅 Event Starting Now!',
+          ev.title,
+          '📅'
+        );
+      }
+    }
+  });
+
+  // Weekly report reminder — every Monday at 8:00 AM
+  if (now.getDay() === 1 && currentHour === 8 && currentMin === 0) {
+    showNotif(
+      '📊 Weekly Report Ready',
+      'Your weekly productivity report is ready. Open Obsidian AI to view it.',
+      '📊'
+    );
+  }
+}
+
+// Pending tasks notification on app load
+function notifyOnLoad() {
+  if (Notification.permission !== 'granted') return;
+  setTimeout(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dueToday = tasks.filter(t => !t.completed && t.due_date === todayStr);
+    const overdue = tasks.filter(t => !t.completed && t.due_date && t.due_date < todayStr);
+    if (dueToday.length > 0) {
+      showNotif('📋 Tasks Due Today', `${dueToday.length} task${dueToday.length > 1 ? 's' : ''} due today!`);
+    }
+    if (overdue.length > 0) {
+      showNotif('⚠️ Overdue Tasks', `${overdue.length} task${overdue.length > 1 ? 's' : ''} overdue!`);
+    }
+  }, 3000);
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('open'));
+}
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) closeModals(); }));
+</script>
+</body>
+</html>
