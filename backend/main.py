@@ -36,6 +36,7 @@ def save_json(path, data):
 class ChatMessage(BaseModel):
     message: str
     history: Optional[List[dict]] = []
+    file_contents: Optional[List[dict]] = []  # [{name, type, data}]
 
 class Task(BaseModel):
     id: Optional[str] = None
@@ -122,7 +123,15 @@ offer to help manage them. Keep responses under 200 words unless asked for more.
         role = h.get("role", "user")
         history_text += f"{role.capitalize()}: {h.get('content', '')}\n"
 
-    full_prompt = f"{history_text}User: {body.message}\nAssistant:"
+    # Append file contents to prompt
+    file_context = ""
+    for fc in (body.file_contents or []):
+        if fc.get("type") == "text":
+            file_context += f"\n\n[File: {fc['name']}]\n{fc['data'][:4000]}"
+        elif fc.get("type") == "image":
+            file_context += f"\n\n[Image attached: {fc['name']}]"
+
+    full_prompt = f"{history_text}User: {body.message}{file_context}\nAssistant:"
     reply = call_ollama(full_prompt, system)
     return {"reply": reply}
 
