@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Obsidian AI — Personal Agent</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Audiowide&family=Exo+2:wght@300;400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0f;
@@ -18,7 +19,7 @@
   --success: #10b981;
   --danger: #ef4444;
   --font-display: 'Rajdhani', sans-serif;
-  --font-heading: 'Orbitron', sans-serif;
+  --font-heading: 'Audiowide', sans-serif;
   --font-mono: 'Space Mono', monospace;
 }
 
@@ -53,33 +54,40 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 0 18px;
+  padding: 12px 0 16px;
   width: 100%;
   border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
   overflow: hidden;
-  gap: 6px;
+  gap: 8px;
 }
 .logo img {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
+  object-position: center;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 8px rgba(124,58,237,0.6));
-  transition: width 0.3s, height 0.3s;
+  filter: drop-shadow(0 0 14px rgba(148,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5));
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: crystalFloat 4s ease-in-out infinite;
+}
+@keyframes crystalFloat {
+  0%, 100% { transform: translateY(0px); filter: drop-shadow(0 0 14px rgba(148,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5)); }
+  50% { transform: translateY(-4px); filter: drop-shadow(0 0 20px rgba(160,80,255,1)) drop-shadow(0 0 40px rgba(124,58,237,0.7)); }
 }
 .logo-text {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 9px;
+  font-family: 'Audiowide', sans-serif;
+  font-weight: 400;
+  font-size: 10px;
   color: var(--accent);
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   white-space: nowrap;
   display: none;
   text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(124,58,237,0.8), 0 0 24px rgba(124,58,237,0.4);
 }
 #sidebar:hover .logo-text { display: block; }
-#sidebar:hover .logo img { width: 48px; height: 48px; }
+#sidebar:hover .logo img { width: 54px; height: 54px; }
 
 .nav-btn {
   width: 44px;
@@ -93,12 +101,20 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   position: relative;
   flex-shrink: 0;
 }
+.nav-btn svg {
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+}
+.nav-btn:hover svg, .nav-btn.active svg {
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+  transform: scale(1.1);
+}
 #sidebar:hover .nav-btn { width: calc(100% - 24px); justify-content: flex-start; padding: 0 14px; gap: 12px; }
-.nav-btn span.label { display: none; font-size: 13px; font-weight: 600; }
+.nav-btn span.label { display: none; font-size: 11px; font-weight: 400; font-family: 'Audiowide', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
 #sidebar:hover .nav-btn span.label { display: block; }
 .nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 .nav-btn.active { box-shadow: 0 0 20px rgba(124,58,237,0.4); }
@@ -121,11 +137,18 @@ body {
   justify-content: space-between;
 }
 #page-title {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  font-family: 'Audiowide', sans-serif;
   text-transform: uppercase;
+}
+#page-title span {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 40%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(124,58,237,0.5));
 }
 #page-title span { color: var(--accent); }
 
@@ -389,6 +412,116 @@ body {
 }
 .btn-save { background: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-family: var(--font-display); font-weight: 600; }
 
+
+/* ── Custom Date & Time Picker ── */
+.custom-date-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.custom-date-wrap:focus-within { border-color: var(--accent); }
+
+.field-icon {
+  padding: 0 10px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.custom-date-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  top: 0; left: 0;
+  border: none !important;
+  background: transparent !important;
+}
+.custom-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.date-display {
+  flex: 1;
+  padding: 10px 14px 10px 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--text);
+  pointer-events: none;
+}
+
+.time-picker-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  gap: 6px;
+  transition: border-color 0.2s;
+}
+.time-picker-wrap:focus-within { border-color: var(--accent); }
+
+.time-part {
+  width: 48px !important;
+  background: var(--panel) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  color: var(--text) !important;
+  text-align: center;
+  font-family: var(--font-mono) !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  padding: 6px 4px !important;
+  appearance: textfield;
+}
+.time-part::-webkit-outer-spin-button,
+.time-part::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.time-part:focus { border-color: var(--accent) !important; outline: none; }
+
+.time-sep {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.ampm-toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-left: 4px;
+}
+.ampm-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.ampm-btn.active {
+  background: var(--accent);
+  color: white;
+}
+.ampm-btn:not(.active):hover { background: var(--border); color: var(--text); }
+
 /* ── Loading ── */
 .loading { display: flex; gap: 4px; align-items: center; padding: 8px 0; }
 .loading span {
@@ -420,11 +553,26 @@ body {
     <img src="logo.png" alt="Obsidian AI"/>
     <span class="logo-text">Obsidian AI</span>
   </div>
-  <button class="nav-btn active" data-page="chat" title="Chat">💬<span class="label">Chat</span></button>
-  <button class="nav-btn" data-page="tasks" title="Tasks">✅<span class="label">Tasks</span></button>
-  <button class="nav-btn" data-page="search" title="Search">🔍<span class="label">Search</span></button>
-  <button class="nav-btn" data-page="calendar" title="Calendar">📅<span class="label">Calendar</span></button>
-  <button class="nav-btn" data-page="report" title="Report">📊<span class="label">Report</span></button>
+  <button class="nav-btn active" data-page="chat" title="Chat">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>
+    <span class="label">Chat</span>
+  </button>
+  <button class="nav-btn" data-page="tasks" title="Tasks">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span class="label">Tasks</span>
+  </button>
+  <button class="nav-btn" data-page="search" title="Search">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+    <span class="label">Search</span>
+  </button>
+  <button class="nav-btn" data-page="calendar" title="Calendar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+    <span class="label">Calendar</span>
+  </button>
+  <button class="nav-btn" data-page="report" title="Report">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><path d="M2 20h20"/></svg>
+    <span class="label">Report</span>
+  </button>
 </nav>
 
 <!-- Main -->
@@ -433,8 +581,12 @@ body {
     <div id="page-title"><span>OBSIDIAN</span> AI — Chat</div>
     <div class="header-right">
       <div id="ollama-status" onclick="checkOllama()" title="Click to check Ollama status" style="cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted)"><span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span><span id="status-text">Checking Ollama...</span></div>
-      <button id="notif-btn" title="Click to enable notifications" onclick="requestNotifPermission()" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🔔</button>
-      <button id="voice-btn" title="Voice input" onclick="toggleVoice()">🎙️</button>
+      <button id="notif-btn" title="Click to enable notifications" onclick="requestNotifPermission()" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="18" cy="5" r="3" fill="var(--accent)" stroke="none"/></svg>
+      </button>
+      <button id="voice-btn" title="Voice input" onclick="toggleVoice()" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+      </button>
     </div>
   </header>
 
@@ -451,7 +603,9 @@ body {
         </div>
         <div id="chat-input-area">
           <textarea id="chat-input" placeholder="Ask me anything…" rows="1" onkeydown="chatKeydown(event)"></textarea>
-          <button class="send-btn" onclick="sendChat()">➤</button>
+          <button class="send-btn" onclick="sendChat()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
         </div>
       </div>
     </div>
@@ -469,7 +623,9 @@ body {
     <div class="page" id="page-search">
       <div class="search-bar-wrap">
         <input id="search-input" type="text" placeholder="Search anything…" onkeydown="if(event.key==='Enter')doSearch()"/>
-        <button id="search-go" onclick="doSearch()">→</button>
+        <button id="search-go" onclick="doSearch()" style="display:flex;align-items:center;justify-content:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
       </div>
       <div id="search-results"></div>
     </div>
@@ -535,8 +691,27 @@ body {
   <div class="modal">
     <h3>Add Event</h3>
     <div class="form-field"><label>TITLE</label><input id="e-title" placeholder="Event name…"/></div>
-    <div class="form-field"><label>DATE</label><input id="e-date" type="date"/></div>
-    <div class="form-field"><label>TIME</label><input id="e-time" type="time"/></div>
+    <div class="form-field">
+      <label>DATE</label>
+      <div class="custom-date-wrap">
+        <span class="field-icon">📅</span>
+        <input id="e-date" type="date" class="custom-date-input"/>
+        <span id="e-date-display" class="date-display">Pick a date</span>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>TIME</label>
+      <div class="time-picker-wrap">
+        <span class="field-icon">🕐</span>
+        <input id="e-hour" type="number" min="1" max="12" placeholder="12" class="time-part"/>
+        <span class="time-sep">:</span>
+        <input id="e-min" type="number" min="0" max="59" placeholder="00" class="time-part"/>
+        <div class="ampm-toggle">
+          <button type="button" id="ampm-am" class="ampm-btn active" onclick="setAMPM('AM')">AM</button>
+          <button type="button" id="ampm-pm" class="ampm-btn" onclick="setAMPM('PM')">PM</button>
+        </div>
+      </div>
+    </div>
     <div class="form-field"><label>DESCRIPTION</label><textarea id="e-desc" rows="2" placeholder="Optional notes…"></textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModals()">Cancel</button>
@@ -700,7 +875,9 @@ function loadTasksUI() {
         <div class="task-meta">${t.due_date ? '📅 ' + t.due_date : ''} ${t.description ? '· ' + t.description.substring(0,60) : ''}</div>
       </div>
       <span class="priority-badge priority-${t.priority}">${t.priority?.toUpperCase()}</span>
-      <button class="icon-btn" onclick="deleteTask('${t.id}')">🗑</button>
+      <button class="icon-btn" onclick="deleteTask('${t.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
     </div>`).join('');
 }
 
@@ -808,9 +985,11 @@ function renderCalendar() {
       <div class="event-item">
         <div>
           <div class="event-title">${e.title}</div>
-          <div class="event-meta">${e.date}${e.time ? ' at ' + e.time : ''} ${e.description ? '· ' + e.description : ''}</div>
+          <div class="event-meta">${e.date}${e.time ? ' at ' + to12hr(e.time) : ''} ${e.description ? '· ' + e.description : ''}</div>
         </div>
-        <button class="icon-btn" onclick="deleteEvent('${e.id}')">🗑</button>
+        <button class="icon-btn" onclick="deleteEvent('${e.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
       </div>`).join('');
   }
 }
@@ -828,18 +1007,28 @@ function openEventModal(date) {
 async function saveEvent() {
   const title = document.getElementById('e-title').value.trim();
   if (!title) return;
+  const hour = document.getElementById('e-hour').value || '12';
+  const min = (document.getElementById('e-min').value || '0').toString().padStart(2,'0');
+  const ampm = document.querySelector('.ampm-btn.active')?.textContent || 'AM';
+  let h24 = parseInt(hour);
+  if (ampm === 'PM' && h24 !== 12) h24 += 12;
+  if (ampm === 'AM' && h24 === 12) h24 = 0;
+  const timeStr = h24 + ':' + min;
   const ev = {
     title,
     date: document.getElementById('e-date').value,
-    time: document.getElementById('e-time').value,
+    time: timeStr,
     description: document.getElementById('e-desc').value
   };
   await fetch(`${API}/calendar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ev) });
   closeModals();
   showNotif('📅 Event Added', document.getElementById('e-title').value || 'New event created');
   document.getElementById('e-title').value = '';
-  document.getElementById('e-time').value = '';
+  document.getElementById('e-hour').value = '';
+  document.getElementById('e-min').value = '';
   document.getElementById('e-desc').value = '';
+  document.getElementById('e-date-display').textContent = 'Pick a date';
+  setAMPM('AM');
   await loadEvents();
   renderCalendar();
 }
@@ -993,6 +1182,45 @@ function notifyOnLoad() {
       showNotif('⚠️ Overdue Tasks', `${overdue.length} task${overdue.length > 1 ? 's' : ''} overdue!`);
     }
   }, 3000);
+}
+
+
+// ── AM/PM Toggle ────────────────────────────────
+let currentAMPM = 'AM';
+function setAMPM(val) {
+  currentAMPM = val;
+  document.getElementById('ampm-am').classList.toggle('active', val === 'AM');
+  document.getElementById('ampm-pm').classList.toggle('active', val === 'PM');
+}
+
+// ── Date display update ─────────────────────────
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'e-date') {
+    const val = e.target.value;
+    if (val) {
+      const d = new Date(val + 'T00:00:00');
+      const opts = { weekday:'short', year:'numeric', month:'long', day:'numeric' };
+      document.getElementById('e-date-display').textContent = d.toLocaleDateString('en-US', opts);
+    } else {
+      document.getElementById('e-date-display').textContent = 'Pick a date';
+    }
+  }
+});
+
+// Auto-pad minutes on blur
+document.addEventListener('blur', function(e) {
+  if (e.target.id === 'e-min') {
+    if (e.target.value) e.target.value = e.target.value.toString().padStart(2,'0');
+  }
+}, true);
+
+// ── 12hr display helper ─────────────────────────
+function to12hr(time24) {
+  if (!time24) return '';
+  const [h, m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return h12 + ':' + m.toString().padStart(2,'0') + ' ' + ampm;
 }
 
 function closeModals() {
