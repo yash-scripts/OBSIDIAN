@@ -113,10 +113,14 @@ def chat(body: ChatMessage):
     pending = [t for t in tasks if not t.get("completed")]
     today = datetime.date.today().isoformat()
 
+    # Check if message contains file content
+    has_file = "--- FILE:" in body.message or "Image attached:" in body.message
+
     system = f"""You are Obsidian AI, a personal AI assistant. Today is {today}.
 The user has {len(pending)} pending tasks and {len(events)} calendar events.
-Be concise, helpful, and proactive. If the user mentions tasks or scheduling,
-offer to help manage them. Keep responses under 200 words unless asked for more."""
+Be concise, helpful, and proactive. If the user mentions tasks or scheduling, offer to help manage them.
+{"If the user has attached a file, carefully read its full contents between the --- FILE: --- markers and analyze, summarize, or answer questions about it thoroughly." if has_file else "Keep responses under 200 words unless asked for more."}
+Always respond in a clear, structured way."""
 
     history_text = ""
     for h in (body.history or [])[-6:]:

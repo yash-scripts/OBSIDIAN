@@ -917,16 +917,19 @@ async function sendChat() {
 
   appendMsgHTML('user', userBubbleHTML);
 
-  // Build prompt with file contents
-  let fullMsg = msg || 'Please analyze the attached file(s).';
+  // Build prompt with file contents injected FIRST
+  let fileContext = '';
   for (const fc of fileContents) {
     if (fc.type === 'text') {
-      const truncated = fc.data.length > 4000 ? fc.data.substring(0, 4000) + '\n...(truncated)' : fc.data;
-      fullMsg += '\n\n[Attached file: ' + fc.name + ']\n' + truncated;
+      const truncated = fc.data.length > 6000 ? fc.data.substring(0, 6000) + '\n...(truncated)' : fc.data;
+      fileContext += '\n\n--- FILE: ' + fc.name + ' ---\n' + truncated + '\n--- END OF FILE ---';
     } else {
-      fullMsg += '\n\n[Attached image: ' + fc.name + '] (describe or analyze this image if relevant)';
+      fileContext += '\n\n[Image attached: ' + fc.name + ']';
     }
   }
+
+  const userPrompt = msg || 'Please analyze and summarize the attached file(s).';
+  const fullMsg = fileContext ? userPrompt + fileContext : userPrompt;
 
   chatHistory.push({ role: 'user', content: fullMsg });
 
